@@ -61,6 +61,7 @@ class Game:
             for p in self.players:
                 if is_ok:
                     if not ai.is_connected(p):
+                        print "ai not connected"
                         is_ok = False
         else:
             is_ok = False
@@ -70,44 +71,96 @@ class Game:
         
 
     def set_wall(self, x, y, side):
+        #print "set_wall():", x,y, side
         placed = False
-        if side == "TOP" and y > 0 and \
-           self.board.get(x,y).top_has_wall == False and \
-           x < 8 and \
-           self.board.get(x+1,y).top_has_wall == False:
+        if side == "TOP":
+            if y <= 0:
+                print "TOP y<=0"
+                return placed
+            if x >= 8:
+                print "TOP x>=8"
+                return placed
+            if self.board.get(x,y).top_has_wall:
+                print "TOP (x,y).top_has_wall"
+                return placed
+            if self.board.get(x+1,y).top_has_wall:
+                print "TOP (x+1,y).top_has_wall"
+                return placed
+            if self.board.get(x,y-1).right_has_wall and self.board.get(x,y).right_has_wall:
+                print "TOP (x,y-1).right_has_wall and (x,y).right_has_wall"
+                return placed
+            placed = True
             self.board.get(x,y).top_has_wall = True
             self.board.get(x+1,y).top_has_wall = True
-            placed = True
-            if y < 8:
+            if y > 0:
                 self.board.get(x,y-1).bottom_has_wall = True
                 self.board.get(x+1,y-1).bottom_has_wall = True
-        elif side == "BOTTOM" and y < 8 and \
-           self.board.get(x,y).bottom_has_wall == False and \
-           x < 8 and \
-           self.board.get(x+1,y).bottom_has_wall == False:
-            self.board.get(x,y).bottom_has_wall = True
-            self.board.get(x+1,y).bottom_has_wall = True
+
+        elif side == "BOTTOM":
+            if y >= 8:
+                print "BOTTOM y >= 8"
+                return placed
+            if x >= 8:
+                print "BOTTOM x >= 8"
+                return placed
+            if self.board.get(x,y).bottom_has_wall:
+                print "BOTTOM (x,y).bottom_has_wall"
+                return placed
+            if self.board.get(x+1,y).bottom_has_wall:
+                print "BOTTOM (x+1,y).bottom_has_wall"
+                return placed
+            if self.board.get(x,y+1).right_has_wall and self.board.get(x,y).right_has_wall:
+                print "BOTTOM (x,y+1).right_has_wall and (x,y).right_has_wall"
+                return placed
             placed = True
-            if y > 0:
+            self.board.get(x,y).bottom_has_wall = True
+            self.board.get(x+1,y).bottom_has_wall = True            
+            if y < 8:
                 self.board.get(x,y+1).top_has_wall = True
                 self.board.get(x+1,y+1).top_has_wall = True
-        elif side == "LEFT" and x > 0 and \
-           self.board.get(x,y).left_has_wall == False and \
-           y < 8 and \
-           self.board.get(x,y+1).left_has_wall == False:
+
+        elif side == "LEFT":
+            if x <= 0:
+                print "LEFT x <= 0"
+                return placed
+            if y >= 8:
+                print "LEFT y >= 8"
+                return placed
+            if self.board.get(x,y).left_has_wall:
+                print "LEFT (x,y).left_has_wall"
+                return placed
+            if  self.board.get(x,y+1).left_has_wall:
+                print "LEFT (x,y+1).left_has_wall"
+                return placed
+            if self.board.get(x-1,y).bottom_has_wall and self.board.get(x,y).bottom_has_wall:
+                print "LEFT (x-1,y).bottom_has_wall and (x,y).bottom_has_wall"
+                return placed
+            placed = True
             self.board.get(x,y).left_has_wall = True
             self.board.get(x,y+1).left_has_wall = True
-            placed = True
             if x < 8:
                 self.board.get(x-1,y).right_has_wall = True
                 self.board.get(x-1,y+1).right_has_wall = True
-        elif side == "RIGHT" and x < 8 and \
-           self.board.get(x,y).right_has_wall == False and \
-           y < 8 and \
-           self.board.get(x,y+1).right_has_wall == False:
+
+        elif side == "RIGHT":
+            if x >= 8:
+                print "RIGHT x >= 8"
+                return placed
+            if y >= 8:
+                print "RIGHT y >= 8"
+                return placed
+            if self.board.get(x,y).right_has_wall:
+                print "RIGHT (x,y).right_has_wall"
+                return placed
+            if self.board.get(x,y+1).right_has_wall:
+                print "RIGHT (x,y+1).right_has_wall"
+                return placed
+            if self.board.get(x,y).bottom_has_wall and self.board.get(x+1,y).bottom_has_wall:
+                print "RIGHT (x,y).bottom_has_wall and (x+1,y).bottom_has_wall"
+                return placed
+            placed = True
             self.board.get(x,y).right_has_wall = True
             self.board.get(x,y+1).right_has_wall = True
-            placed = True
             if x > 0:
                 self.board.get(x+1,y).left_has_wall = True
                 self.board.get(x+1,y+1).left_has_wall = True
@@ -217,15 +270,8 @@ class Game:
             
             if player.is_computer and not victory:
                 ai = AI(self)
-                ai.determine_next_move(self, player)
-                path = ai.find_shortest_path(player, self.board)
-                if path != None and len(path) > 1:
-                    game_event = GameEvent("SPACE")
-                    space = path[1]
-                    game_event.x = space.x
-                    game_event.y = space.y
-                    game_event.section = "CENTER"
-                    player.move_mode = "PAWN"
+                game_event = ai.determine_next_move(self, player)
+                print game_event, player.move_mode
             else:
                 game_event = interface.handle_events()
                 

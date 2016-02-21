@@ -25,3 +25,5 @@ class Player:
         p.number = self.number
         return p
         
+    def __str__(self):
+        return self.name + "," + str(self.number) + ", winX=" + str(self.win_col) + ", winY=" + str(self.win_row)

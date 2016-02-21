@@ -9,4 +9,5 @@ class GameEvent:
         self.x = -1
         self.y = -1    
         
-        
+    def __str__(self):
+        return str(self.name) + "," + str(self.section) + ": " + str(self.x) + "," + str(self.y) + " " 

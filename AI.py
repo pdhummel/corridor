@@ -1,11 +1,13 @@
 import sys
 from Space import Space
+from GameEvent import GameEvent
 
 class AI:
 
     def __init__(self, game):
         self._game = game
     
+    # Check if the space that the player is in, is connected to the victory row.
     def is_connected(self, player):
         connected = False
         graph = self.create_graph(self._game.board, player)
@@ -143,7 +145,7 @@ class AI:
                     distance = space_distances[space]
                     for node in graph[space]:
                         if not space_distances.has_key(node) or space_distances[node] > distance+1:
-                            space_distances[node] = distance + 1    
+                            space_distances[node] = distance + 1
         for row in range(9):
             y = 8 - row
             if victory_row == 8:
@@ -193,8 +195,12 @@ class AI:
                     distance = space_distances[space]
                     for node in graph[space]:
                         if not space_distances.has_key(node) or space_distances[node] > distance+1:
-                            space_distances[node] = distance + 1    
+                            space_distances[node] = distance + 1   
 
+                #if space_distances.has_key(space):
+                #    print x,y,space_distances[space]
+                #else:
+                #    print x,y, "no distance"
         return space_distances            
                         
 
@@ -205,55 +211,98 @@ class AI:
 
     def determine_next_move(self, g, player):
         game = g.clone()
+        best_total = -99
+        game_event = GameEvent("SPACE")
+
         for x in range(9):
             for y in range(9): 
-                print str(x) + "," + str(y)
+
+                #print str(x) + "," + str(y)
                 side = "TOP"
                 placed = game.place_wall(player, x, y, side)
                 if placed:
-                    self.evaluate_game(game, player)
+                    total = self.evaluate_game(game, player)
                     player.unplayed_wall_count = player.unplayed_wall_count + 1
                     game.unset_wall(x, y, side)
+                    if total > best_total:
+                        best_total = total
+                        game_event.x = x
+                        game_event.y = y
+                        game_event.section = side
+                        player.move_mode = "WALL"
                 side = "BOTTOM"
                 placed = game.place_wall(player, x, y, side)
                 if placed:
-                    self.evaluate_game(game, player)
+                    total = self.evaluate_game(game, player)
                     player.unplayed_wall_count = player.unplayed_wall_count + 1
-                    game.unset_wall(x, y, side)                
+                    game.unset_wall(x, y, side)
+                    if total > best_total:
+                        best_total = total                        
+                        game_event.x = x
+                        game_event.y = y
+                        game_event.section = side 
+                        player.move_mode = "WALL"                   
                 side = "LEFT"
                 placed = game.place_wall(player, x, y, side)
                 if placed:
-                    self.evaluate_game(game, player)
+                    total = self.evaluate_game(game, player)
                     player.unplayed_wall_count = player.unplayed_wall_count + 1
-                    game.unset_wall(x, y, side)                
+                    game.unset_wall(x, y, side)
+                    if total > best_total:
+                        best_total = total                        
+                        game_event.x = x
+                        game_event.y = y
+                        game_event.section = side
+                        player.move_mode = "WALL"
                 side = "RIGHT"
                 placed = game.place_wall(player, x, y, side)
                 if placed:
-                    self.evaluate_game(game, player)
+                    total = self.evaluate_game(game, player)
                     player.unplayed_wall_count = player.unplayed_wall_count + 1
-                    game.unset_wall(x, y, side)                
-                        
+                    game.unset_wall(x, y, side)
+                    if total > best_total:
+                        best_total = total
+                        game_event.x = x
+                        game_event.y = y
+                        game_event.section = side
+                        player.move_mode = "WALL"
+
+        path = self.find_shortest_path(player, g.board)
+        if path != None and len(path) > 1:
+            total = self.evaluate_game(game, player, True)
+            if total > best_total:
+                best_total = total
+                game_event = GameEvent("SPACE")
+                space = path[1]
+                game_event.x = space.x
+                game_event.y = space.y
+                game_event.section = "CENTER"
+                player.move_mode = "PAWN"
+        return game_event
 
     def evaluate_game(self, game, player, moved=False):
         p1 = game.players[0]   
         p2 = game.players[1]
-        #sp1 = len(self.find_shortest_path(p1, game.board))-1
-        #sp2 = len(self.find_shortest_path(p2, game.board))-1
+        if p1.name == player.name:
+            p1.unplayed_wall_count = player.unplayed_wall_count
+        else:
+            p2.unplayed_wall_count = player.unplayed_wall_count
         sp1 = self.get_distance(p1, game.board)
         sp2 = self.get_distance(p2, game.board)
         wc1 = p1.unplayed_wall_count
         wc2 = p2.unplayed_wall_count
         cp = game.current_player
-        total1 = (-sp1+sp2)*2 +wc1-wc2
-        total2 = (sp1-sp2)*2 -wc1+wc2
+        total = 0
+
+        if moved == False:
+            total = total + 1        
         if cp == 0:
-            if moved == False:
-                total1 = total1 + 1
+            total = (sp2 - sp1)*2 + (wc1-wc2)
         else:
-            if moved == False:
-                total2 = total2 + 1
-        print "dist1=%s, dist2=%s, wall1=%s, wall2=%s, current=%s => %s %s" \
-            % (sp1, sp2, wc1, wc2, cp, total1, total2)  
+            total = (sp1 - sp2)*2 + (wc2-wc1)
+        #print "dist1=%s, dist2=%s, wall1=%s, wall2=%s, current=%s => %s" \
+        #    % (sp1, sp2, wc1, wc2, cp, total)  
+        return total
                         
     
     def print_path(self, path):
