@@ -1,5 +1,4 @@
 class Space:
-
     
     def __init__(self):
         self.occupied_by_player = None
@@ -18,8 +17,7 @@ class Space:
         s.right_has_wall = self.right_has_wall
         s.x = self.x
         s.y = self.y
-        #s.occupied_by_player = self.occupied_by_player
-        #print str(self) + " " + str(s)
+        s.occupied_by_player = self.occupied_by_player
         return s
         
     def __str__(self):

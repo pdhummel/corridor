@@ -1,6 +1,8 @@
+import sys
 from Board import Board
 from AI import AI
 from GameEvent import GameEvent
+
 
 class Game:
 
@@ -18,6 +20,7 @@ class Game:
 
       
     def init_two_player_game(self, p1, p2):
+        print "init_two_player_game"
         p1.unplayed_wall_count = 10
         p2.unplayed_wall_count = 10
         self.board = Board()
@@ -59,9 +62,10 @@ class Game:
         placed = self.set_wall(x, y, side)
         if placed:
             for p in self.players:
+                print p.name, p.win_row
                 if is_ok:
                     if not ai.is_connected(p):
-                        print "ai not connected"
+                        print "not connected"
                         is_ok = False
         else:
             is_ok = False
@@ -170,25 +174,25 @@ class Game:
         if side == "TOP" and y > 0:
             self.board.get(x,y).top_has_wall = False
             self.board.get(x+1,y).top_has_wall = False
-            if y < 8:
+            if y < 9:
                 self.board.get(x,y-1).bottom_has_wall = False
                 self.board.get(x+1,y-1).bottom_has_wall = False
         elif side == "BOTTOM" and y < 8:
             self.board.get(x,y).bottom_has_wall = False
             self.board.get(x+1,y).bottom_has_wall = False
-            if y > 0:
+            if y >= 0:
                 self.board.get(x,y+1).top_has_wall = False
                 self.board.get(x+1,y+1).top_has_wall = False
         elif side == "LEFT" and x > 0:
             self.board.get(x,y).left_has_wall = False
             self.board.get(x,y+1).left_has_wall = False
-            if x < 8:
+            if x < 9:
                 self.board.get(x-1,y).right_has_wall = False
                 self.board.get(x-1,y+1).right_has_wall = False
         elif side == "RIGHT" and x < 8:
             self.board.get(x,y).right_has_wall = False
             self.board.get(x,y+1).right_has_wall = False
-            if x > 0:
+            if x >= 0:
                 self.board.get(x+1,y).left_has_wall = False
                 self.board.get(x+1,y+1).left_has_wall = False
 
@@ -215,10 +219,7 @@ class Game:
 
     def begin_turn(self):
         player = self.players[self.current_player]
-        #AI(self).evaluate_game(self, player)           
         self.output_player_message(player.name + ", your turn")
-        #print self.player_message
-
 
 
     def validate_move(self, player, x, y):
@@ -228,6 +229,7 @@ class Game:
             old_x = player.position.x
             old_y = player.position.y
             if x < 0 or x > 8 or y < 0 or y > 8:
+                print "validate_move: move out of bounds", x, y
                 is_ok = False
             if is_ok:
                 ai = AI(self)
@@ -236,11 +238,17 @@ class Game:
                     nodes = graph[player.position]
                     space = self.board.get(x, y) 
                     if not space in nodes:
+                        print "validate_move: space not in connected node", x, y
+                        # TODO:  check for jumping another pawn
                         is_ok = False
                 else:
+                    print "validate_move: space not in graph", x, y
                     is_ok = False        
             if is_ok:
-                space = self.board.get(x, y)                                                            
+                space = self.board.get(x, y)  
+                if space.occupied_by_player:
+                    print "validate_move: space occupied by another player", x, y
+                    is_ok = False                                                          
         return is_ok       
 
 
@@ -269,9 +277,12 @@ class Game:
             
             
             if player.is_computer and not victory:
+                print "game_loop: for " + str(player)
                 ai = AI(self)
-                game_event = ai.determine_next_move(self, player)
-                print game_event, player.move_mode
+                game_event = ai.determine_next_move(player)
+                print "game_loop: game_event=", game_event
+                player.move_mode = game_event.move_mode
+                #exit(0);
             else:
                 game_event = interface.handle_events()
                 
@@ -339,8 +350,28 @@ class Game:
             g.place_player(player, player_x, player_y)
             g.players.append(player)
         return g
-    
-                 
+
+
+        self.players = []
+        self.board = None
+        self.current_player = 0
+        self.turn = 0
+        self.game_message = ""
+        self.player_message = ""
+        self.old_game_message = ""
+        self.old_player_message = ""
+        self.interface = None
+
+    def __str__(self):
+        output = ""
+        output = output + "turn=" + str(self.turn)
+        output = output + "\n"
+        output = output + "current_player=" + str(self.current_player)
+        output = output + "\n"
+        output = output + "players=" + str(self.players)
+        output = output + "\n"
+        output = output + str(self.board) 
+        return output
                 
 
                 
