@@ -7,173 +7,8 @@ class AI:
     def __init__(self, game):
         self._game = game.clone()
     
-    # Check if the space that the player is in, is connected to the victory row.
-    def is_connected(self, p):
-        print "is_connected"
-        connected = False
-        player = self._game.players[p.number]
-        graph = self.create_graph(self._game.board, player)
-        connected_spaces = self.find_connected_spaces(self._game.board, graph, player.win_row)
-        print "connected_spaces size=", len(connected_spaces)
-        if player.position in connected_spaces:
-            connected = True
-        del connected_spaces[:]
-        return connected
+
         
-
-    def get_distance(self, player, board):
-        graph = self.create_graph(board, player)   
-        space_distances = self.calculate_space_distances(board, graph, player.win_row)
-        distance = -1
-        if space_distances.has_key(player.position):
-            distance = space_distances[player.position]
-        return distance
-        
-
-    def find_shortest_path(self, player, board):
-        print "find_shortest_path for " + str(player)
-        graph = self.create_graph(board, player)
-        start = player.position
-        # TODO:  is this a problem having x=0 here?
-        #end = self._game.board.get(0, player.win_row)
-        end = board.get(0, player.win_row)
-        path = []
-        shortest_path = self.find_shortest_path2(graph, start, end, path)
-        return shortest_path
-                
-        
-    def find_shortest_path2(self, graph, start, end, path=[], shortest_len=0, top_call=True):
-        path = path + [start]
-        if start.y == end.y:
-            return path
-        if not graph.has_key(start):
-            return None
-        shortest = None
-        if (len(path) >= shortest_len-1 and shortest_len > 0) or len(path) > 30:
-            return None
-        for node in graph[start]:
-            if node not in path and (len(path) < shortest_len-1 or shortest_len == 0):
-                newpath = self.find_shortest_path2(graph, node, end, path, shortest_len, False)
-                if newpath:
-                    if not shortest or len(newpath) < len(shortest):
-                        shortest = newpath
-                        shortest_len = len(shortest)
-                        if shortest_len <= abs(start.y - end.y):
-                            return shortest
-        return shortest        
-
-    def create_graph(self, board, player):
-        print "create_graph"
-        graph = {}
-        for x in range(9):
-            for y in range(9): 
-                space = board.get(x, y)  
-                to_cells = []
-                if y > 0 and space.top_has_wall == False:
-                    top = board.get(x, y-1)
-                    if top.bottom_has_wall == False:
-                        to_cells.append(top)
-                    if top.occupied_by_player != None:
-                        if top.y > 1 and top.top_has_wall == False:
-                            top = board.get(x, y-2)
-                            to_cells.append(top)
-                if y < 8 and space.bottom_has_wall == False:
-                    bottom = board.get(x, y+1)
-                    if bottom.top_has_wall == False:
-                        to_cells.append(bottom)
-                    if bottom.occupied_by_player != None:
-                        if bottom.y < 7 and bottom.bottom_has_wall == False:
-                            bottom = board.get(x, y+2)
-                            to_cells.append(bottom)
-                if x > 0 and space.left_has_wall == False:
-                    left = board.get(x-1, y)
-                    if left.right_has_wall == False:
-                        to_cells.append(left)      
-                    if left.occupied_by_player != None:
-                        if left.x > 1 and left.left_has_wall == False:
-                            left = board.get(x-2, y)
-                            to_cells.append(left)
-                if x < 8 and space.right_has_wall == False:
-                    right = board.get(x+1, y)
-                    if right.left_has_wall == False:
-                        to_cells.append(right) 
-                    if right.occupied_by_player != None:
-                        if right.x < 7 and right.right_has_wall == False:
-                            right = board.get(x+2, y)
-                            to_cells.append(right)
-
-                graph[space] = to_cells
-        return graph
-
-    def output_graph(self, graph, board):
-        for x in range(9):
-            for y in range(9):
-                space = board.get(x, y)
-                if graph.has_key(space):
-                    print x, y, "->", graph[space]
-                else:
-                    print x, y, "->", None
-
-
-    def calculate_space_distance(self, board, graph, victory_row, space_distances, x, y):
-        space = board.get(x, y)
-        if y == victory_row:
-            space_distances[space] = 0
-
-        # Try to get the distance for this space from its nodes
-        elif graph.has_key(space): # and not space_distances.has_key(space):    
-            for node in graph[space]:
-                if graph.has_key(node) and space_distances.has_key(node):
-                    distance = space_distances[node]
-                    if not space_distances.has_key(space) or space_distances[space] > distance+1:
-                        space_distances[space] = distance + 1
-
-        # Populate the distances for its nodes
-        if graph.has_key(space) and space_distances.has_key(space):
-            distance = space_distances[space]
-            for node in graph[space]:
-                if not space_distances.has_key(node) or space_distances[node] > distance+1:
-                    if node.y == victory_row:
-                        space_distances[node] = 0
-                    else:
-                        space_distances[node] = distance + 1
-                    # If a node distance was just determined, we want it to share the love to its siblings too
-                    self.calculate_space_distance(board, graph, victory_row, space_distances, node.x, node.y)
-
-    def calculate_space_distances(self, board, graph, victory_row):
-        print "calculate_space_distances"
-        space_distances = {}
-        y = victory_row
-
-        # We need to loop just in case the cols in the victory row have walls between them.
-        for col in range(9):
-            x = col
-            self.calculate_space_distance(board, graph, victory_row, space_distances, x, y)
-        self.calculate_space_distance(board, graph, victory_row, space_distances, 0, 0)
-        self.calculate_space_distance(board, graph, victory_row, space_distances, 8, 8)
-
-        # Return here to turn-off output of space_distances
-        #return space_distances
-        for row in range(9):
-            output = ""
-            for col in range(9):                
-                x = col
-                y = row
-                space = board.get(x,y)
-                if space_distances.has_key(space):
-                    output = output + " " + str(space_distances[space])
-                else:
-                    output = output + " ?"
-            print output
-        print " "
-        return space_distances            
-                        
-
-    def find_connected_spaces(self, board, graph, victory_row):
-        print "find_connected_spaces", victory_row
-        space_distances = self.calculate_space_distances(board, graph, victory_row)
-        connected_spaces = space_distances.keys()
-        return connected_spaces            
 
     def determine_next_move(self, p):
         print "determine_next_move for " + str(p)
@@ -255,6 +90,37 @@ class AI:
                 game_event.move_mode = "PAWN"
         return game_event
 
+    def find_shortest_path(self, player, board):
+        print "find_shortest_path for " + str(player)
+        graph = board.create_graph()
+        start = player.position
+        end = board.get(0, player.win_row)
+        path = []
+        shortest_path = self.find_shortest_path2(graph, start, end, path)
+        return shortest_path
+
+
+    def find_shortest_path2(self, graph, start, end, path=[], shortest_len=0, top_call=True):
+        path = path + [start]
+        if start.y == end.y:
+            return path
+        if not graph.has_key(start):
+            return None
+        shortest = None
+        if (len(path) >= shortest_len-1 and shortest_len > 0) or len(path) > 30:
+            return None
+        for node in graph[start]:
+            if node not in path and (len(path) < shortest_len-1 or shortest_len == 0):
+                newpath = self.find_shortest_path2(graph, node, end, path, shortest_len, False)
+                if newpath:
+                    if not shortest or len(newpath) < len(shortest):
+                        shortest = newpath
+                        shortest_len = len(shortest)
+                        if shortest_len <= abs(start.y - end.y):
+                            return shortest
+        return shortest
+
+
     def evaluate_game(self, game, player, moved=False):
         p1 = game.players[0]   
         p2 = game.players[1]
@@ -262,8 +128,8 @@ class AI:
             p1.unplayed_wall_count = player.unplayed_wall_count
         else:
             p2.unplayed_wall_count = player.unplayed_wall_count
-        sp1 = self.get_distance(p1, game.board)
-        sp2 = self.get_distance(p2, game.board)
+        sp1 = game.board.get_distance(p1.position, p1.win_row)
+        sp2 = game.board.get_distance(p2.position, p2.win_row)
         wc1 = p1.unplayed_wall_count
         wc2 = p2.unplayed_wall_count
         cp = game.current_player
@@ -285,10 +151,5 @@ class AI:
             sys.stdout.write(str(space))
         print ""
             
-    def print_board(self, game):
-        for x in range(9):
-            for y in range(9):                    
-                space = game.board.get(x,y)
-                print str(x) + "," + str(y) + " " + str(space.occupied_by_player)
-            
+
                 

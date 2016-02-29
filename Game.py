@@ -5,7 +5,6 @@ from GameEvent import GameEvent
 
 
 class Game:
-
     
     def __init__(self):
         self.players = []
@@ -35,6 +34,7 @@ class Game:
         p2.win_row = 0
         self.current_player = 0
 
+    # Puts a player at the specified location on the game board.
     def place_player(self, player, x, y):
         # clear the old position
         if player.position != None:
@@ -46,6 +46,7 @@ class Game:
         moved = True
         return moved      
         
+    # Tries to move the player to the specified location.
     def move_player(self, player, x, y):
         moved = False
         is_valid = self.validate_move(player, x, y)
@@ -55,17 +56,17 @@ class Game:
             moved = True
         return moved
 
-
+    # Checks whether it is valid to place a wall at the specified location.
     def validate_wall(self, x, y, side):
         print "validate_wall", x, y, side
         is_ok = True
         placed = self.set_wall(x, y, side)
-        ai = AI(self)
+        #ai = AI(self)
         if placed:
             for p in self.players:
                 print p.name, p.win_row
                 if is_ok:
-                    if not ai.is_connected(p):
+                    if not self.board.is_connected(p.position, p.win_row):
                         print "not connected"
                         is_ok = False
         else:
@@ -74,7 +75,7 @@ class Game:
             self.unset_wall(x, y, side)
         return is_ok
         
-
+    # Places a wall at the specified location.
     def set_wall(self, x, y, side):
         print "set_wall():", x,y, side
         placed = False
@@ -198,7 +199,7 @@ class Game:
                 self.board.get(x+1,y+1).left_has_wall = False
 
 
-        
+    # Tries to place a wall at the specified location  
     def place_wall(self, player, x, y, side):
         print "place_wall", x, y, side
         placed = False
@@ -223,7 +224,7 @@ class Game:
         player = self.players[self.current_player]
         self.output_player_message(player.name + ", your turn")
 
-
+    # Checks whether the player can be placed at the specified location.
     def validate_move(self, player, x, y):
         print "validate_move"
         space = None
@@ -236,7 +237,7 @@ class Game:
                 is_ok = False
             if is_ok:
                 ai = AI(self)
-                graph = ai.create_graph(self.board, player)   
+                graph = self.board.create_graph()
                 if graph.has_key(player.position):
                     nodes = graph[player.position]
                     space = self.board.get(x, y) 
@@ -253,9 +254,7 @@ class Game:
                     is_ok = False                                                          
         return is_ok       
 
-
-        
-
+    # Checks if the player has reached the victory row
     def check_victory(self, player):
         victory = False
         if player == None:
@@ -266,7 +265,7 @@ class Game:
             victory = True            
         return victory
         
-
+    # Main game loop logic
     def game_loop(self, interface):
         self.interface = interface
         game_over = False
@@ -353,17 +352,7 @@ class Game:
             g.players.append(player)
         return g
 
-
-        self.players = []
-        self.board = None
-        self.current_player = 0
-        self.turn = 0
-        self.game_message = ""
-        self.player_message = ""
-        self.old_game_message = ""
-        self.old_player_message = ""
-        self.interface = None
-
+    # To string method
     def __str__(self):
         output = ""
         output = output + "turn=" + str(self.turn)
