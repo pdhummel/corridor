@@ -14,20 +14,12 @@ class AI:
         player = self._game.players[p.number]
         graph = self.create_graph(self._game.board, player)
         connected_spaces = self.find_connected_spaces(self._game.board, graph, player.win_row)
+        print "connected_spaces size=", len(connected_spaces)
         if player.position in connected_spaces:
             connected = True
         del connected_spaces[:]
         return connected
         
-    def find_a_path(self, player):
-        graph = self.create_graph(self._game.board, player)
-        start = player.position
-        end = self._game.board.get(0, player.win_row)
-        path = []
-        path = self.find_path(graph, start, end, path)        
-        return path   
-
-
 
     def get_distance(self, player, board):
         graph = self.create_graph(board, player)   
@@ -50,21 +42,6 @@ class AI:
         return shortest_path
                 
         
-    def find_path(self, graph, start, end, path=[]):
-        path = path + [start]
-        if start.y == end.y:
-            return path
-        if not graph.has_key(start):
-            return None
-        if len(path) > 30:
-            return None
-        for node in graph[start]:
-            if node not in path:
-                newpath = self.find_path(graph, node, end, path)
-                if newpath: return newpath
-        return None
-
-
     def find_shortest_path2(self, graph, start, end, path=[], shortest_len=0, top_call=True):
         path = path + [start]
         if start.y == end.y:
@@ -94,36 +71,36 @@ class AI:
                 to_cells = []
                 if y > 0 and space.top_has_wall == False:
                     top = board.get(x, y-1)
-                    if top.bottom_has_wall == False: # and (top.occupied_by_player == None or top.occupied_by_player.number == player.number):
-                        to_cells.append(top)  
-                    #else:
-                    #    if top.y > 0 and top.top_has_wall == False:
-                    #        top = board.get(x, y-2)
-                    #        to_cells.append(top)                    
+                    if top.bottom_has_wall == False:
+                        to_cells.append(top)
+                    if top.occupied_by_player != None:
+                        if top.y > 1 and top.top_has_wall == False:
+                            top = board.get(x, y-2)
+                            to_cells.append(top)
                 if y < 8 and space.bottom_has_wall == False:
                     bottom = board.get(x, y+1)
-                    if bottom.top_has_wall == False: # and (bottom.occupied_by_player == None or bottom.occupied_by_player.number == player.number):
-                        to_cells.append(bottom)                      
-                    #else:
-                    #    if bottom.y < 8 and bottom.bottom_has_wall == False:
-                    #        bottom = board.get(x, y+2)
-                    #        to_cells.append(bottom)                                                                    
+                    if bottom.top_has_wall == False:
+                        to_cells.append(bottom)
+                    if bottom.occupied_by_player != None:
+                        if bottom.y < 7 and bottom.bottom_has_wall == False:
+                            bottom = board.get(x, y+2)
+                            to_cells.append(bottom)
                 if x > 0 and space.left_has_wall == False:
                     left = board.get(x-1, y)
-                    if left.right_has_wall == False: # and (left.occupied_by_player == None or left.occupied_by_player.number == player.number):
+                    if left.right_has_wall == False:
                         to_cells.append(left)      
-                    #else:
-                    #    if left.x > 0 and left.left_has_wall == False:
-                    #        left = board.get(x-2, y)
-                    #        to_cells.append(left)                            
+                    if left.occupied_by_player != None:
+                        if left.x > 1 and left.left_has_wall == False:
+                            left = board.get(x-2, y)
+                            to_cells.append(left)
                 if x < 8 and space.right_has_wall == False:
                     right = board.get(x+1, y)
-                    if right.left_has_wall == False: # and (right.occupied_by_player == None or right.occupied_by_player.number == player.number):
+                    if right.left_has_wall == False:
                         to_cells.append(right) 
-                    #else:
-                    #    if right.x < 8 and right.right_has_wall == False:
-                    #        right = board.get(x+2, y)
-                    #        to_cells.append(right)                           
+                    if right.occupied_by_player != None:
+                        if right.x < 7 and right.right_has_wall == False:
+                            right = board.get(x+2, y)
+                            to_cells.append(right)
 
                 graph[space] = to_cells
         return graph
@@ -176,7 +153,7 @@ class AI:
         self.calculate_space_distance(board, graph, victory_row, space_distances, 8, 8)
 
         # Return here to turn-off output of space_distances
-        return space_distances
+        #return space_distances
         for row in range(9):
             output = ""
             for col in range(9):                
@@ -193,7 +170,7 @@ class AI:
                         
 
     def find_connected_spaces(self, board, graph, victory_row):
-        print "find_connected_spaces"
+        print "find_connected_spaces", victory_row
         space_distances = self.calculate_space_distances(board, graph, victory_row)
         connected_spaces = space_distances.keys()
         return connected_spaces            
@@ -259,7 +236,6 @@ class AI:
 
         print "best total from walls=" + str(best_total)
         path = self.find_shortest_path(player, game.board)
-        print path
         if path != None and len(path) > 1:            
             next_space = path[1]
             moved = game.move_player(player, next_space.x, next_space.y)

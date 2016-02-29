@@ -57,9 +57,10 @@ class Game:
 
 
     def validate_wall(self, x, y, side):
+        print "validate_wall", x, y, side
         is_ok = True
-        ai = AI(self)
         placed = self.set_wall(x, y, side)
+        ai = AI(self)
         if placed:
             for p in self.players:
                 print p.name, p.win_row
@@ -75,7 +76,7 @@ class Game:
         
 
     def set_wall(self, x, y, side):
-        #print "set_wall():", x,y, side
+        print "set_wall():", x,y, side
         placed = False
         if side == "TOP":
             if y <= 0:
@@ -199,6 +200,7 @@ class Game:
 
         
     def place_wall(self, player, x, y, side):
+        print "place_wall", x, y, side
         placed = False
         is_ok = self.validate_wall(x, y, side)
         if is_ok and x >= 0 and x <= 8 and y >= 0 and y <= 8:
@@ -223,6 +225,7 @@ class Game:
 
 
     def validate_move(self, player, x, y):
+        print "validate_move"
         space = None
         is_ok = True
         if player.position != None:
@@ -239,7 +242,6 @@ class Game:
                     space = self.board.get(x, y) 
                     if not space in nodes:
                         print "validate_move: space not in connected node", x, y
-                        # TODO:  check for jumping another pawn
                         is_ok = False
                 else:
                     print "validate_move: space not in graph", x, y
