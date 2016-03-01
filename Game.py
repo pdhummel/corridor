@@ -2,6 +2,7 @@ import sys
 from Board import Board
 from AI import AI
 from GameEvent import GameEvent
+from Logger import log
 
 
 class Game:
@@ -19,7 +20,7 @@ class Game:
 
       
     def init_two_player_game(self, p1, p2):
-        print "init_two_player_game"
+        log("init_two_player_game", 1, 2)
         p1.unplayed_wall_count = 10
         p2.unplayed_wall_count = 10
         self.board = Board()
@@ -58,16 +59,16 @@ class Game:
 
     # Checks whether it is valid to place a wall at the specified location.
     def validate_wall(self, x, y, side):
-        print "validate_wall", x, y, side
+        log("validate_wall", x, y, side)
         is_ok = True
         placed = self.set_wall(x, y, side)
         #ai = AI(self)
         if placed:
             for p in self.players:
-                print p.name, p.win_row
+                log(p.name, p.win_row)
                 if is_ok:
                     if not self.board.is_connected(p.position, p.win_row):
-                        print "not connected"
+                        log("not connected")
                         is_ok = False
         else:
             is_ok = False
@@ -77,23 +78,23 @@ class Game:
         
     # Places a wall at the specified location.
     def set_wall(self, x, y, side):
-        print "set_wall():", x,y, side
+        log("set_wall():", x,y, side)
         placed = False
         if side == "TOP":
             if y <= 0:
-                print "TOP y<=0"
+                log("TOP y<=0")
                 return placed
             if x >= 8:
-                print "TOP x>=8"
+                log("TOP x>=8")
                 return placed
             if self.board.get(x,y).top_has_wall:
-                print "TOP (x,y).top_has_wall"
+                log("TOP (x,y).top_has_wall")
                 return placed
             if self.board.get(x+1,y).top_has_wall:
-                print "TOP (x+1,y).top_has_wall"
+                log("TOP (x+1,y).top_has_wall")
                 return placed
             if self.board.get(x,y-1).right_has_wall and self.board.get(x,y).right_has_wall:
-                print "TOP (x,y-1).right_has_wall and (x,y).right_has_wall"
+                log("TOP (x,y-1).right_has_wall and (x,y).right_has_wall")
                 return placed
             placed = True
             self.board.get(x,y).top_has_wall = True
@@ -104,19 +105,19 @@ class Game:
 
         elif side == "BOTTOM":
             if y >= 8:
-                print "BOTTOM y >= 8"
+                log("BOTTOM y >= 8")
                 return placed
             if x >= 8:
-                print "BOTTOM x >= 8"
+                log("BOTTOM x >= 8")
                 return placed
             if self.board.get(x,y).bottom_has_wall:
-                print "BOTTOM (x,y).bottom_has_wall"
+                log("BOTTOM (x,y).bottom_has_wall")
                 return placed
             if self.board.get(x+1,y).bottom_has_wall:
-                print "BOTTOM (x+1,y).bottom_has_wall"
+                log("BOTTOM (x+1,y).bottom_has_wall")
                 return placed
             if self.board.get(x,y+1).right_has_wall and self.board.get(x,y).right_has_wall:
-                print "BOTTOM (x,y+1).right_has_wall and (x,y).right_has_wall"
+                log("BOTTOM (x,y+1).right_has_wall and (x,y).right_has_wall")
                 return placed
             placed = True
             self.board.get(x,y).bottom_has_wall = True
@@ -127,19 +128,19 @@ class Game:
 
         elif side == "LEFT":
             if x <= 0:
-                print "LEFT x <= 0"
+                log("LEFT x <= 0")
                 return placed
             if y >= 8:
-                print "LEFT y >= 8"
+                log("LEFT y >= 8")
                 return placed
             if self.board.get(x,y).left_has_wall:
-                print "LEFT (x,y).left_has_wall"
+                log("LEFT (x,y).left_has_wall")
                 return placed
             if  self.board.get(x,y+1).left_has_wall:
-                print "LEFT (x,y+1).left_has_wall"
+                log("LEFT (x,y+1).left_has_wall")
                 return placed
             if self.board.get(x-1,y).bottom_has_wall and self.board.get(x,y).bottom_has_wall:
-                print "LEFT (x-1,y).bottom_has_wall and (x,y).bottom_has_wall"
+                log("LEFT (x-1,y).bottom_has_wall and (x,y).bottom_has_wall")
                 return placed
             placed = True
             self.board.get(x,y).left_has_wall = True
@@ -150,19 +151,19 @@ class Game:
 
         elif side == "RIGHT":
             if x >= 8:
-                print "RIGHT x >= 8"
+                log("RIGHT x >= 8")
                 return placed
             if y >= 8:
-                print "RIGHT y >= 8"
+                log("RIGHT y >= 8")
                 return placed
             if self.board.get(x,y).right_has_wall:
-                print "RIGHT (x,y).right_has_wall"
+                log("RIGHT (x,y).right_has_wall")
                 return placed
             if self.board.get(x,y+1).right_has_wall:
-                print "RIGHT (x,y+1).right_has_wall"
+                log("RIGHT (x,y+1).right_has_wall")
                 return placed
             if self.board.get(x,y).bottom_has_wall and self.board.get(x+1,y).bottom_has_wall:
-                print "RIGHT (x,y).bottom_has_wall and (x+1,y).bottom_has_wall"
+                log("RIGHT (x,y).bottom_has_wall and (x+1,y).bottom_has_wall")
                 return placed
             placed = True
             self.board.get(x,y).right_has_wall = True
@@ -201,7 +202,7 @@ class Game:
 
     # Tries to place a wall at the specified location  
     def place_wall(self, player, x, y, side):
-        print "place_wall", x, y, side
+        log("place_wall", x, y, side)
         placed = False
         is_ok = self.validate_wall(x, y, side)
         if is_ok and x >= 0 and x <= 8 and y >= 0 and y <= 8:
@@ -221,19 +222,21 @@ class Game:
         
 
     def begin_turn(self):
+        self.turn = self.turn + 1
+        log("turn=", self.turn)
         player = self.players[self.current_player]
-        self.output_player_message(player.name + ", your turn")
+        self.output_player_message(player.name + ", your turn. walls=" + str(self.players[0].unplayed_wall_count) + ", " + str(self.players[1].unplayed_wall_count))
 
     # Checks whether the player can be placed at the specified location.
     def validate_move(self, player, x, y):
-        print "validate_move"
+        log("validate_move")
         space = None
         is_ok = True
         if player.position != None:
             old_x = player.position.x
             old_y = player.position.y
             if x < 0 or x > 8 or y < 0 or y > 8:
-                print "validate_move: move out of bounds", x, y
+                log("validate_move: move out of bounds", x, y)
                 is_ok = False
             if is_ok:
                 ai = AI(self)
@@ -242,15 +245,15 @@ class Game:
                     nodes = graph[player.position]
                     space = self.board.get(x, y) 
                     if not space in nodes:
-                        print "validate_move: space not in connected node", x, y
+                        log("validate_move: space not in connected node", x, y)
                         is_ok = False
                 else:
-                    print "validate_move: space not in graph", x, y
+                    log("validate_move: space not in graph", x, y)
                     is_ok = False        
             if is_ok:
                 space = self.board.get(x, y)  
                 if space.occupied_by_player:
-                    print "validate_move: space occupied by another player", x, y
+                    log("validate_move: space occupied by another player", x, y)
                     is_ok = False                                                          
         return is_ok       
 
@@ -275,39 +278,36 @@ class Game:
         while not game_over:
             player = self.players[self.current_player]
             game_event = None
-            
-            
+
             if player.is_computer and not victory:
-                print "game_loop: for " + str(player)
+                log("game_loop: for " + str(player))
                 ai = AI(self)
                 game_event = ai.determine_next_move(player)
-                print "game_loop: game_event=", game_event
+                log("game_loop: game_event=", game_event)
                 player.move_mode = game_event.move_mode
                 #exit(0);
             else:
                 game_event = interface.handle_events()
-                
-            
-               
+                player.move_mode = game_event.move_mode
+
             if game_event == None:
                 pass 
+            elif game_event.name == "PASS":
+                self.end_turn();
+                continue;
             elif game_event.name == "EXIT":
                 game_over = True
             elif game_event.name == "SPACE" and not victory:
-                
-                
+
                 space = self.board.get(game_event.x,game_event.y)
                 if game_event.section == "CENTER" and \
                    space.occupied_by_player == player:
                     player.move_mode = "PAWN" 
                     self.output_player_message(player.name + ", move your pawn")
-                    #print player.name + ", move your pawn"      
                              
                 elif game_event.section != "CENTER" and player.move_mode != "WALL" and player.unplayed_wall_count > 0:
                     player.move_mode = "WALL"
-                    #print player.name + ", place a wall - " + str(player.unplayed_wall_count) + " left"
                     self.output_player_message(player.name + ", place a wall - " + str(player.unplayed_wall_count) + " left")
-                    
 
                 else:
                     if player.move_mode == "PAWN":
@@ -319,7 +319,6 @@ class Game:
                                 #game_over = True
                                 victory = True
                                 self.output_player_message(player.name + ", you won!")
-                                #print player.name + ", you won!"
                             else:
                                 self.end_turn()
                             interface.draw_game(self)

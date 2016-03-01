@@ -15,8 +15,6 @@ blue = 0, 0, 255
 
 class PyGameInterface:
 
-
-
     def __init__(self):
         pygame.init()
         

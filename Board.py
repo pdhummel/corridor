@@ -1,4 +1,5 @@
 from Space import Space
+from Logger import log
 
 class Board:
 	
@@ -32,7 +33,7 @@ class Board:
         self.spaces[x][y] = space
     
     def create_graph(self):
-        print "create_graph"
+        log("create_graph")
         board = self
         graph = {}
         for x in range(9):
@@ -80,9 +81,9 @@ class Board:
             for y in range(9):
                 space = self.get(x, y)
                 if graph.has_key(space):
-                    print x, y, "->", graph[space]
+                    log(x, y, "->", graph[space])
                 else:
-                    print x, y, "->", None
+                    log(x, y, "->", None)
 
 
     def get_distance(self, space, victory_row):
@@ -96,7 +97,7 @@ class Board:
 
     # Check if the space is connected to the victory row.
     def is_connected(self, space, victory_row):
-        print "is_connected"
+        log("is_connected")
         connected = False
         graph = self.create_graph()
         connected_spaces = self.find_connected_spaces(graph, victory_row)
@@ -106,7 +107,7 @@ class Board:
         return connected
 
     def find_connected_spaces(self, graph, victory_row):
-        print "find_connected_spaces for row ", victory_row
+        log("find_connected_spaces for row ", victory_row)
         space_distances = self.calculate_space_distances(graph, victory_row)
         connected_spaces = space_distances.keys()
         return connected_spaces
@@ -117,7 +118,7 @@ class Board:
             space_distances[space] = 0
 
         # Try to get the distance for this space from its nodes
-        elif graph.has_key(space): # and not space_distances.has_key(space):
+        elif graph.has_key(space) and not space_distances.has_key(space):
             for node in graph[space]:
                 if graph.has_key(node) and space_distances.has_key(node):
                     distance = space_distances[node]
@@ -137,7 +138,7 @@ class Board:
                     self.calculate_space_distance(graph, victory_row, space_distances, node.x, node.y)
 
     def calculate_space_distances(self, graph, victory_row):
-        print "calculate_space_distances"
+        log("calculate_space_distances")
         space_distances = {}
         y = victory_row
 
@@ -149,6 +150,7 @@ class Board:
         self.calculate_space_distance(graph, victory_row, space_distances, 8, 8)
 
         # Return here to turn-off output of space_distances
+        # TODO: log
         return space_distances
         for row in range(9):
             output = ""
@@ -160,8 +162,8 @@ class Board:
                     output = output + " " + str(space_distances[space])
                 else:
                     output = output + " ?"
-            print output
-        print " "
+            log(output)
+        log(" ")
         return space_distances
 
 
@@ -198,8 +200,9 @@ class Board:
         output = output + "\n"
         return output
 
+
     def print_board(self, game):
         for x in range(9):
             for y in range(9):
                 space = game.board.get(x,y)
-                print str(x) + "," + str(y) + " " + str(space.occupied_by_player)
+                log(str(x) + "," + str(y) + " " + str(space.occupied_by_player))

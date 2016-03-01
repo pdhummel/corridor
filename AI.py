@@ -1,20 +1,57 @@
 import sys
+from random import randint
 from Space import Space
 from GameEvent import GameEvent
+from Logger import log
 
 class AI:
 
     def __init__(self, game):
         self._game = game.clone()
-    
 
-        
 
     def determine_next_move(self, p):
-        print "determine_next_move for " + str(p)
+        log("determine_next_move for " + str(p))
         game = self._game
         player = game.players[p.number]
+        
+        other_player = game.players[0]
+        if p.number == 0:
+            other_player = game.players[1]
+        player_distance = game.board.get_distance(player.position, player.win_row)
+        other_player_distance = game.board.get_distance(other_player.position, other_player.win_row)
 
+        best_total = -99
+        game_event = GameEvent("SPACE")
+
+        should_try_wall = randint(0,game.turn)        
+        log("try wall?", "wall count=", player.unplayed_wall_count, "turn=", self._game.turn, "should_try_wall=", should_try_wall)
+        if player.unplayed_wall_count > 0 and game.turn > 1 and (game.turn > 3 or should_try_wall > 0 or other_player_distance < 4):
+            best_total, game_event = self.propose_next_wall(game, player)
+
+        path = self.find_shortest_path(player, game.board)
+        if path != None and len(path) > 1:            
+            next_space = path[1]
+            moved = game.move_player(player, next_space.x, next_space.y)
+            if moved:
+                total = self.evaluate_game(game, player, True)
+            else:
+                log("determine_next_move: not moving", next_space.x, next_space.y)
+                total = -99
+            log("other player distance=", other_player_distance)
+            log("best total from walls=" + str(best_total))
+            log("move_total=" + str(total))
+            if (total > 0 and player_distance < other_player_distance) or (total > best_total and best_total == -99) or (total >= best_total and other_player_distance >= 4):
+                best_total = total
+                game_event = GameEvent("SPACE")
+                space = path[1]
+                game_event.x = space.x
+                game_event.y = space.y
+                game_event.section = "CENTER"
+                game_event.move_mode = "PAWN"
+        return game_event
+
+    def propose_next_wall(self, game, player):
         best_total = -99
         game_event = GameEvent("SPACE")
 
@@ -68,30 +105,11 @@ class AI:
                         game_event.y = y
                         game_event.section = side
                         game_event.move_mode = "WALL"
+        return (best_total, game_event)
 
-        print "best total from walls=" + str(best_total)
-        path = self.find_shortest_path(player, game.board)
-        if path != None and len(path) > 1:            
-            next_space = path[1]
-            moved = game.move_player(player, next_space.x, next_space.y)
-            if moved:
-                total = self.evaluate_game(game, player, True)
-            else:
-                print "determine_next_move: not moving", next_space.x, next_space.y
-                total = -99
-            print "move_total=" + str(total)
-            if total > best_total:
-                best_total = total
-                game_event = GameEvent("SPACE")
-                space = path[1]
-                game_event.x = space.x
-                game_event.y = space.y
-                game_event.section = "CENTER"
-                game_event.move_mode = "PAWN"
-        return game_event
 
     def find_shortest_path(self, player, board):
-        print "find_shortest_path for " + str(player)
+        log("find_shortest_path for " + str(player))
         graph = board.create_graph()
         start = player.position
         end = board.get(0, player.win_row)
@@ -141,11 +159,20 @@ class AI:
             total = (sp2 - sp1)*2 + (wc1-wc2)
         else:
             total = (sp1 - sp2)*2 + (wc2-wc1)
-        #print "dist1=%s, dist2=%s, wall1=%s, wall2=%s, current=%s => %s" \
-        #    % (sp1, sp2, wc1, wc2, cp, total)  
+        log("dist1=%s, dist2=%s, wall1=%s, wall2=%s, moved=%s, current=%s => %s" \
+            % (sp1, sp2, wc1, wc2, moved, cp, total))
+        # check for possible jump
+        if moved and p1.position.x == p2.position.x:
+            y_dist = abs(p1.position.y - p2.position.y)
+            if y_dist % 2 == 1 and p1.position.y < p2.position.y:
+                log("subtracting from total")
+                total = total - 1
+            else:
+                log("adding to total")
+                total = total + 1
         return total
                         
-    
+    # TODO: log
     def print_path(self, path):
         for space in path:
             sys.stdout.write(str(space))
