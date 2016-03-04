@@ -53,8 +53,9 @@ class Game:
         is_valid = self.validate_move(player, x, y)
         if is_valid:
             self.place_player(player, x, y)
-            
             moved = True
+        if moved:
+            self.board.board_changed()
         return moved
 
     # Checks whether it is valid to place a wall at the specified location.
@@ -62,7 +63,6 @@ class Game:
         log("validate_wall", x, y, side)
         is_ok = True
         placed = self.set_wall(x, y, side)
-        #ai = AI(self)
         if placed:
             for p in self.players:
                 log(p.name, p.win_row)
@@ -145,7 +145,7 @@ class Game:
             placed = True
             self.board.get(x,y).left_has_wall = True
             self.board.get(x,y+1).left_has_wall = True
-            if x < 8:
+            if x > 0:
                 self.board.get(x-1,y).right_has_wall = True
                 self.board.get(x-1,y+1).right_has_wall = True
 
@@ -168,37 +168,39 @@ class Game:
             placed = True
             self.board.get(x,y).right_has_wall = True
             self.board.get(x,y+1).right_has_wall = True
-            if x > 0:
+            if x < 8:
                 self.board.get(x+1,y).left_has_wall = True
                 self.board.get(x+1,y+1).left_has_wall = True
+        if placed:
+            self.board.board_changed()
         return placed
 
     def unset_wall(self, x, y, side):
-        if side == "TOP" and y > 0:
+        if side == "TOP" and y > 0 and x < 8:
             self.board.get(x,y).top_has_wall = False
             self.board.get(x+1,y).top_has_wall = False
-            if y < 9:
+            if y > 0:
                 self.board.get(x,y-1).bottom_has_wall = False
                 self.board.get(x+1,y-1).bottom_has_wall = False
-        elif side == "BOTTOM" and y < 8:
+        elif side == "BOTTOM" and y < 8 and x < 8:
             self.board.get(x,y).bottom_has_wall = False
             self.board.get(x+1,y).bottom_has_wall = False
-            if y >= 0:
+            if y < 8:
                 self.board.get(x,y+1).top_has_wall = False
                 self.board.get(x+1,y+1).top_has_wall = False
-        elif side == "LEFT" and x > 0:
+        elif side == "LEFT" and x > 0 and y < 8:
             self.board.get(x,y).left_has_wall = False
             self.board.get(x,y+1).left_has_wall = False
-            if x < 9:
+            if x > 0:
                 self.board.get(x-1,y).right_has_wall = False
                 self.board.get(x-1,y+1).right_has_wall = False
-        elif side == "RIGHT" and x < 8:
+        elif side == "RIGHT" and x < 8 and y < 8:
             self.board.get(x,y).right_has_wall = False
             self.board.get(x,y+1).right_has_wall = False
-            if x >= 0:
+            if x  < 8:
                 self.board.get(x+1,y).left_has_wall = False
                 self.board.get(x+1,y+1).left_has_wall = False
-
+        self.board.board_changed()
 
     # Tries to place a wall at the specified location  
     def place_wall(self, player, x, y, side):
@@ -240,7 +242,7 @@ class Game:
                 is_ok = False
             if is_ok:
                 ai = AI(self)
-                graph = self.board.create_graph()
+                graph = self.board.graph  #self.board.create_graph()
                 if graph.has_key(player.position):
                     nodes = graph[player.position]
                     space = self.board.get(x, y) 
@@ -285,10 +287,12 @@ class Game:
                 game_event = ai.determine_next_move(player)
                 log("game_loop: game_event=", game_event)
                 player.move_mode = game_event.move_mode
+                #raw_input("Press Enter to continue")
                 #exit(0);
             else:
                 game_event = interface.handle_events()
-                player.move_mode = game_event.move_mode
+                if player.move_mode == None:
+                    player.move_mode = game_event.move_mode
 
             if game_event == None:
                 pass 
@@ -322,6 +326,7 @@ class Game:
                             else:
                                 self.end_turn()
                             interface.draw_game(self)
+                            #raw_input("Press Enter to continue")
                         
                     elif player.move_mode == "WALL":
                         placed = self.place_wall(player, 
@@ -330,6 +335,7 @@ class Game:
                         if placed:         
                             self.end_turn()
                             interface.draw_game(self)
+                            #raw_input("Press Enter to continue")
 
     def output_player_message(self, msg):
         self.old_player_message = self.player_message

@@ -27,11 +27,14 @@ class AI:
         should_try_wall = randint(0,game.turn)        
         log("try wall?", "wall count=", player.unplayed_wall_count, "turn=", self._game.turn, "should_try_wall=", should_try_wall)
         if player.unplayed_wall_count > 0 and game.turn > 1 and (game.turn > 3 or should_try_wall > 0 or other_player_distance < 4):
-            best_total, game_event = self.propose_next_wall(game, player)
+            best_total, game_event = self.propose_wall(game, player)
 
         path = self.find_shortest_path(player, game.board)
         if path != None and len(path) > 1:            
             next_space = path[1]
+            if next_space.occupied_by_player != None:
+                if len(path) > 2:
+                    next_space = path[2]
             moved = game.move_player(player, next_space.x, next_space.y)
             if moved:
                 total = self.evaluate_game(game, player, True)
@@ -51,7 +54,7 @@ class AI:
                 game_event.move_mode = "PAWN"
         return game_event
 
-    def propose_next_wall(self, game, player):
+    def propose_wall(self, game, player):
         best_total = -99
         game_event = GameEvent("SPACE")
 

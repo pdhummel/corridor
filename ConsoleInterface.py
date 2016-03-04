@@ -2,12 +2,13 @@ import sys
 from Player import Player
 from Game import Game
 from GameEvent import GameEvent
+from Logger import Logger
 
 
 class ConsoleInterface:
 
     def __init__(self):
-        pass                    
+        Logger.output_console = False
         
 
     def handle_events(self):

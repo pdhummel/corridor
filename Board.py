@@ -2,10 +2,14 @@ from Space import Space
 from Logger import log
 
 class Board:
-	
-    def __init__(self):	
+
+    def __init__(self):
         self.spaces = [[None for col in range(9)] for row in range(9)]
-	
+        self.graph = {}
+        self.space_distances_p1 = {}
+        self.space_distances_p2 = {}
+
+
     def initialize(self):	
         for x in range(9):
             for y in range(9):
@@ -13,8 +17,10 @@ class Board:
                 space.x = x
                 space.y = y
                 self.set(x, y, space)
-                	
-                
+
+        self.graph = self.create_graph()
+        self.space_distances_p1 = self.calculate_space_distances(self.graph, 8)
+        self.space_distances_p2 = self.calculate_space_distances(self.graph, 0)
 
     def clone(self):
         b = Board()
@@ -23,8 +29,75 @@ class Board:
                 space = self.get(x, y)
                 s = space.clone()
                 b.set(x, y, s)
+
+        for x in range(9):
+            for y in range(9): 
+                space = self.get(x, y)
+                s = b.get(x, y)
+                if self.space_distances_p1.has_key(space):
+                    b.space_distances_p1[s] = self.space_distances_p1[space]
+                if self.space_distances_p2.has_key(space):
+                    b.space_distances_p2[s] = self.space_distances_p2[space]
+                if self.graph.has_key(space):
+                    cells = []
+                    for node in self.graph[space]:
+                        cell = b.get(node.x, node.y)
+                        cells.append(cell)
+                    b.graph[s] = cells
         return b
-        
+
+    def board_changed(self):
+        log("board_changed")
+        new_graph = self.create_graph()
+        spaces_to_recalc = []
+        for x in range(9):
+            for y in range(9):
+                space = self.get(x, y)
+                to_cells = self.graph[space]
+                new_cells = new_graph[space]
+
+                xor_cells = set(to_cells) ^ set(new_cells)                
+                if len(xor_cells) > 0:
+                    spaces_to_recalc.append(space)
+                    for node in xor_cells:
+                        spaces_to_recalc.append(node)
+        self.graph = new_graph
+        self.space_distances_p1 = self.calculate_space_distances(self.graph, 8)
+        self.space_distances_p2 = self.calculate_space_distances(self.graph, 0)
+        for space in list(set(spaces_to_recalc)):
+            log("board_changed: spaces_to_recalc", space.x, space.y)
+            #self.calculate_space_distance2(self.graph, 8, self.space_distances_p1, space.x, space.y)
+            #self.calculate_space_distance2(self.graph, 0, self.space_distances_p2, space.x, space.y)
+
+        # TODO:  make a function of this
+        # Return here to turn-off output of space_distances
+        #return
+        for row in range(9):
+            output = ""
+            for col in range(9):
+                x = col
+                y = row
+                space = self.get(x,y)
+                if self.space_distances_p1.has_key(space):
+                    output = output + " " + str(self.space_distances_p1[space])
+                else:
+                    output = output + " ?"
+            log(output)
+        log(" ")
+        for row in range(9):
+            output = ""
+            for col in range(9):
+                x = col
+                y = row
+                space = self.get(x,y)
+                if self.space_distances_p2.has_key(space):
+                    output = output + " " + str(self.space_distances_p2[space])
+                else:
+                    output = output + " ?"
+            log(output)
+        log(" ")
+
+
 
     def get(self, x, y):
         return self.spaces[x][y]
@@ -44,6 +117,7 @@ class Board:
                     top = board.get(x, y-1)
                     if top.bottom_has_wall == False:
                         to_cells.append(top)
+                    # TODO:  diaganol pawn jump
                     if top.occupied_by_player != None:
                         if top.y > 1 and top.top_has_wall == False:
                             top = board.get(x, y-2)
@@ -52,6 +126,7 @@ class Board:
                     bottom = board.get(x, y+1)
                     if bottom.top_has_wall == False:
                         to_cells.append(bottom)
+                    # TODO:  diaganol pawn jump
                     if bottom.occupied_by_player != None:
                         if bottom.y < 7 and bottom.bottom_has_wall == False:
                             bottom = board.get(x, y+2)
@@ -60,6 +135,7 @@ class Board:
                     left = board.get(x-1, y)
                     if left.right_has_wall == False:
                         to_cells.append(left)
+                    # TODO:  diaganol pawn jump
                     if left.occupied_by_player != None:
                         if left.x > 1 and left.left_has_wall == False:
                             left = board.get(x-2, y)
@@ -68,11 +144,11 @@ class Board:
                     right = board.get(x+1, y)
                     if right.left_has_wall == False:
                         to_cells.append(right) 
+                    # TODO:  diaganol pawn jump
                     if right.occupied_by_player != None:
                         if right.x < 7 and right.right_has_wall == False:
                             right = board.get(x+2, y)
                             to_cells.append(right)
-
                 graph[space] = to_cells
         return graph
 
@@ -87,8 +163,12 @@ class Board:
 
 
     def get_distance(self, space, victory_row):
-        graph = self.create_graph()
-        space_distances = self.calculate_space_distances(graph, victory_row)
+        graph = self.graph  # self.create_graph()
+        #space_distances = self.calculate_space_distances(graph, victory_row)
+        if victory_row == 8:
+            space_distances = self.space_distances_p1
+        else:
+            space_distances = self.space_distances_p2        
         distance = -1
         if space_distances.has_key(space):
             distance = space_distances[space]
@@ -99,7 +179,7 @@ class Board:
     def is_connected(self, space, victory_row):
         log("is_connected")
         connected = False
-        graph = self.create_graph()
+        graph = self.graph # self.create_graph()
         connected_spaces = self.find_connected_spaces(graph, victory_row)
         if space in connected_spaces:
             connected = True
@@ -108,28 +188,63 @@ class Board:
 
     def find_connected_spaces(self, graph, victory_row):
         log("find_connected_spaces for row ", victory_row)
-        space_distances = self.calculate_space_distances(graph, victory_row)
+        if victory_row == 8:
+            space_distances = self.space_distances_p1
+        else:
+            space_distances = self.space_distances_p2
+        #space_distances = self.calculate_space_distances(graph, victory_row)
         connected_spaces = space_distances.keys()
         return connected_spaces
 
-    def calculate_space_distance(self, graph, victory_row, space_distances, x, y):
+    def calculate_space_distance2(self, graph, victory_row, space_distances, x, y, visited=[]):
         space = self.get(x, y)
+        visited.append(space)
+        recalc = False
         if y == victory_row:
             space_distances[space] = 0
 
         # Try to get the distance for this space from its nodes
-        elif graph.has_key(space) and not space_distances.has_key(space):
+        else:
+            old_distance = 99
+            if space_distances.has_key(space):
+                old_distance = space_distances[space]
+                space_distances.pop(space, None)
+            if graph.has_key(space):
+                for node in graph[space]:
+                    if graph.has_key(node) and space_distances.has_key(node):
+                        distance = space_distances[node]
+                        if not space_distances.has_key(space) or space_distances[space] > distance+1:
+                            space_distances[space] = distance + 1
+            if (space_distances.has_key(space) and space_distances[space] != old_distance):
+                recalc = True
+
+        # Populate the distances for its nodes
+        if recalc and graph.has_key(space) and space_distances.has_key(space):
+            distance = space_distances[space]
+            for node in graph[space]:
+                if node not in visited:
+                    self.calculate_space_distance2(graph, victory_row, space_distances, node.x, node.y, visited)
+
+        del visited[:]
+
+    def calculate_space_distance(self, graph, victory_row, space_distances, x, y):
+        space = self.get(x, y)        
+        if y == victory_row:
+            space_distances[space] = 0
+
+        # Try to get the distance for this space from its nodes
+        elif graph.has_key(space) and (space_distances.has_key(space)):
             for node in graph[space]:
                 if graph.has_key(node) and space_distances.has_key(node):
                     distance = space_distances[node]
-                    if not space_distances.has_key(space) or space_distances[space] > distance+1:
+                    if space_distances[space] > distance+1:
                         space_distances[space] = distance + 1
 
         # Populate the distances for its nodes
         if graph.has_key(space) and space_distances.has_key(space):
             distance = space_distances[space]
             for node in graph[space]:
-                if not space_distances.has_key(node) or space_distances[node] > distance+1:
+                if not space_distances.has_key(node) or space_distances[node] > distance+1:            
                     if node.y == victory_row:
                         space_distances[node] = 0
                     else:
@@ -150,8 +265,7 @@ class Board:
         self.calculate_space_distance(graph, victory_row, space_distances, 8, 8)
 
         # Return here to turn-off output of space_distances
-        # TODO: log
-        return space_distances
+        #return space_distances
         for row in range(9):
             output = ""
             for col in range(9):
@@ -166,7 +280,7 @@ class Board:
         log(" ")
         return space_distances
 
-
+    # TODO: redo this output using the ConsoleInterface code
     def __str__(self):
         output = ""
         for y in range(9):
@@ -199,10 +313,3 @@ class Board:
             output = output + row_output
         output = output + "\n"
         return output
-
-
-    def print_board(self, game):
-        for x in range(9):
-            for y in range(9):
-                space = game.board.get(x,y)
-                log(str(x) + "," + str(y) + " " + str(space.occupied_by_player))
