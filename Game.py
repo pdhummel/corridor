@@ -61,23 +61,22 @@ class Game:
     # Checks whether it is valid to place a wall at the specified location.
     def validate_wall(self, x, y, side):
         log("validate_wall", x, y, side)
+        board = self.board.clone()
         is_ok = True
-        placed = self.set_wall(x, y, side)
+        placed = self.set_wall(board, x, y, side)
         if placed:
             for p in self.players:
                 log(p.name, p.win_row)
-                if is_ok:
-                    if not self.board.is_connected(p.position, p.win_row):
-                        log("not connected")
-                        is_ok = False
+                player_space = board.get(p.position.x, p.position.y)
+                if not board.is_connected(player_space, p.win_row):
+                    log("not connected")
+                    is_ok = False
         else:
             is_ok = False
-        if placed:
-            self.unset_wall(x, y, side)
         return is_ok
         
     # Places a wall at the specified location.
-    def set_wall(self, x, y, side):
+    def set_wall(self, board, x, y, side):
         log("set_wall():", x,y, side)
         placed = False
         if side == "TOP":
@@ -87,21 +86,21 @@ class Game:
             if x >= 8:
                 log("TOP x>=8")
                 return placed
-            if self.board.get(x,y).top_has_wall:
+            if board.get(x,y).top_has_wall:
                 log("TOP (x,y).top_has_wall")
                 return placed
-            if self.board.get(x+1,y).top_has_wall:
+            if board.get(x+1,y).top_has_wall:
                 log("TOP (x+1,y).top_has_wall")
                 return placed
-            if self.board.get(x,y-1).right_has_wall and self.board.get(x,y).right_has_wall:
+            if board.get(x,y-1).right_has_wall and board.get(x,y).right_has_wall:
                 log("TOP (x,y-1).right_has_wall and (x,y).right_has_wall")
                 return placed
             placed = True
-            self.board.get(x,y).top_has_wall = True
-            self.board.get(x+1,y).top_has_wall = True
+            board.get(x,y).top_has_wall = True
+            board.get(x+1,y).top_has_wall = True
             if y > 0:
-                self.board.get(x,y-1).bottom_has_wall = True
-                self.board.get(x+1,y-1).bottom_has_wall = True
+                board.get(x,y-1).bottom_has_wall = True
+                board.get(x+1,y-1).bottom_has_wall = True
 
         elif side == "BOTTOM":
             if y >= 8:
@@ -110,21 +109,21 @@ class Game:
             if x >= 8:
                 log("BOTTOM x >= 8")
                 return placed
-            if self.board.get(x,y).bottom_has_wall:
+            if board.get(x,y).bottom_has_wall:
                 log("BOTTOM (x,y).bottom_has_wall")
                 return placed
-            if self.board.get(x+1,y).bottom_has_wall:
+            if board.get(x+1,y).bottom_has_wall:
                 log("BOTTOM (x+1,y).bottom_has_wall")
                 return placed
-            if self.board.get(x,y+1).right_has_wall and self.board.get(x,y).right_has_wall:
+            if board.get(x,y+1).right_has_wall and board.get(x,y).right_has_wall:
                 log("BOTTOM (x,y+1).right_has_wall and (x,y).right_has_wall")
                 return placed
             placed = True
-            self.board.get(x,y).bottom_has_wall = True
-            self.board.get(x+1,y).bottom_has_wall = True            
+            board.get(x,y).bottom_has_wall = True
+            board.get(x+1,y).bottom_has_wall = True            
             if y < 8:
-                self.board.get(x,y+1).top_has_wall = True
-                self.board.get(x+1,y+1).top_has_wall = True
+                board.get(x,y+1).top_has_wall = True
+                board.get(x+1,y+1).top_has_wall = True
 
         elif side == "LEFT":
             if x <= 0:
@@ -133,21 +132,21 @@ class Game:
             if y >= 8:
                 log("LEFT y >= 8")
                 return placed
-            if self.board.get(x,y).left_has_wall:
+            if board.get(x,y).left_has_wall:
                 log("LEFT (x,y).left_has_wall")
                 return placed
-            if  self.board.get(x,y+1).left_has_wall:
+            if  board.get(x,y+1).left_has_wall:
                 log("LEFT (x,y+1).left_has_wall")
                 return placed
-            if self.board.get(x-1,y).bottom_has_wall and self.board.get(x,y).bottom_has_wall:
+            if board.get(x-1,y).bottom_has_wall and board.get(x,y).bottom_has_wall:
                 log("LEFT (x-1,y).bottom_has_wall and (x,y).bottom_has_wall")
                 return placed
             placed = True
-            self.board.get(x,y).left_has_wall = True
-            self.board.get(x,y+1).left_has_wall = True
+            board.get(x,y).left_has_wall = True
+            board.get(x,y+1).left_has_wall = True
             if x > 0:
-                self.board.get(x-1,y).right_has_wall = True
-                self.board.get(x-1,y+1).right_has_wall = True
+                board.get(x-1,y).right_has_wall = True
+                board.get(x-1,y+1).right_has_wall = True
 
         elif side == "RIGHT":
             if x >= 8:
@@ -156,51 +155,51 @@ class Game:
             if y >= 8:
                 log("RIGHT y >= 8")
                 return placed
-            if self.board.get(x,y).right_has_wall:
+            if board.get(x,y).right_has_wall:
                 log("RIGHT (x,y).right_has_wall")
                 return placed
-            if self.board.get(x,y+1).right_has_wall:
+            if board.get(x,y+1).right_has_wall:
                 log("RIGHT (x,y+1).right_has_wall")
                 return placed
-            if self.board.get(x,y).bottom_has_wall and self.board.get(x+1,y).bottom_has_wall:
+            if board.get(x,y).bottom_has_wall and board.get(x+1,y).bottom_has_wall:
                 log("RIGHT (x,y).bottom_has_wall and (x+1,y).bottom_has_wall")
                 return placed
             placed = True
-            self.board.get(x,y).right_has_wall = True
-            self.board.get(x,y+1).right_has_wall = True
+            board.get(x,y).right_has_wall = True
+            board.get(x,y+1).right_has_wall = True
             if x < 8:
-                self.board.get(x+1,y).left_has_wall = True
-                self.board.get(x+1,y+1).left_has_wall = True
+                board.get(x+1,y).left_has_wall = True
+                board.get(x+1,y+1).left_has_wall = True
         if placed:
-            self.board.board_changed()
+            board.board_changed()
         return placed
 
-    def unset_wall(self, x, y, side):
+    def unset_wall(self, board, x, y, side):
         if side == "TOP" and y > 0 and x < 8:
-            self.board.get(x,y).top_has_wall = False
-            self.board.get(x+1,y).top_has_wall = False
+            board.get(x,y).top_has_wall = False
+            board.get(x+1,y).top_has_wall = False
             if y > 0:
-                self.board.get(x,y-1).bottom_has_wall = False
-                self.board.get(x+1,y-1).bottom_has_wall = False
+                board.get(x,y-1).bottom_has_wall = False
+                board.get(x+1,y-1).bottom_has_wall = False
         elif side == "BOTTOM" and y < 8 and x < 8:
-            self.board.get(x,y).bottom_has_wall = False
-            self.board.get(x+1,y).bottom_has_wall = False
+            board.get(x,y).bottom_has_wall = False
+            board.get(x+1,y).bottom_has_wall = False
             if y < 8:
-                self.board.get(x,y+1).top_has_wall = False
-                self.board.get(x+1,y+1).top_has_wall = False
+                board.get(x,y+1).top_has_wall = False
+                board.get(x+1,y+1).top_has_wall = False
         elif side == "LEFT" and x > 0 and y < 8:
-            self.board.get(x,y).left_has_wall = False
-            self.board.get(x,y+1).left_has_wall = False
+            board.get(x,y).left_has_wall = False
+            board.get(x,y+1).left_has_wall = False
             if x > 0:
-                self.board.get(x-1,y).right_has_wall = False
-                self.board.get(x-1,y+1).right_has_wall = False
+                board.get(x-1,y).right_has_wall = False
+                board.get(x-1,y+1).right_has_wall = False
         elif side == "RIGHT" and x < 8 and y < 8:
-            self.board.get(x,y).right_has_wall = False
-            self.board.get(x,y+1).right_has_wall = False
+            board.get(x,y).right_has_wall = False
+            board.get(x,y+1).right_has_wall = False
             if x  < 8:
-                self.board.get(x+1,y).left_has_wall = False
-                self.board.get(x+1,y+1).left_has_wall = False
-        self.board.board_changed()
+                board.get(x+1,y).left_has_wall = False
+                board.get(x+1,y+1).left_has_wall = False
+        board.board_changed()
 
     # Tries to place a wall at the specified location  
     def place_wall(self, player, x, y, side):
@@ -209,7 +208,7 @@ class Game:
         is_ok = self.validate_wall(x, y, side)
         if is_ok and x >= 0 and x <= 8 and y >= 0 and y <= 8:
             if player.unplayed_wall_count > 0:
-                placed = self.set_wall(x, y, side)
+                placed = self.set_wall(self.board, x, y, side)
                 if placed:
                     player.unplayed_wall_count = player.unplayed_wall_count - 1
         return placed

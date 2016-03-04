@@ -61,11 +61,12 @@ class AI:
         for x in range(9):
             for y in range(9): 
                 side = "TOP"
+                log("propose_wall ", x, y, side)
                 placed = game.place_wall(player, x, y, side)
                 if placed:
                     total = self.evaluate_game(game, player)
                     player.unplayed_wall_count = player.unplayed_wall_count + 1
-                    game.unset_wall(x, y, side)
+                    game.unset_wall(game.board, x, y, side)
                     if total > best_total:
                         best_total = total
                         game_event.x = x
@@ -73,11 +74,12 @@ class AI:
                         game_event.section = side
                         game_event.move_mode = "WALL"
                 side = "BOTTOM"
+                log("propose_wall ", x, y, side)
                 placed = game.place_wall(player, x, y, side)
                 if placed:
                     total = self.evaluate_game(game, player)
                     player.unplayed_wall_count = player.unplayed_wall_count + 1
-                    game.unset_wall(x, y, side)
+                    game.unset_wall(game.board, x, y, side)
                     if total > best_total:
                         best_total = total
                         game_event.x = x
@@ -85,11 +87,12 @@ class AI:
                         game_event.section = side 
                         game_event.move_mode = "WALL"
                 side = "LEFT"
+                log("propose_wall ", x, y, side)
                 placed = game.place_wall(player, x, y, side)
                 if placed:
                     total = self.evaluate_game(game, player)
                     player.unplayed_wall_count = player.unplayed_wall_count + 1
-                    game.unset_wall(x, y, side)
+                    game.unset_wall(game.board, x, y, side)
                     if total > best_total:
                         best_total = total                        
                         game_event.x = x
@@ -97,17 +100,19 @@ class AI:
                         game_event.section = side
                         game_event.move_mode = "WALL"
                 side = "RIGHT"
+                log("propose_wall ", x, y, side)
                 placed = game.place_wall(player, x, y, side)
                 if placed:
                     total = self.evaluate_game(game, player)
                     player.unplayed_wall_count = player.unplayed_wall_count + 1
-                    game.unset_wall(x, y, side)
+                    game.unset_wall(game.board, x, y, side)
                     if total > best_total:
                         best_total = total
                         game_event.x = x
                         game_event.y = y
                         game_event.section = side
                         game_event.move_mode = "WALL"
+        log("propose_wall event=", game_event)
         return (best_total, game_event)
 
 

@@ -49,53 +49,9 @@ class Board:
     def board_changed(self):
         log("board_changed")
         new_graph = self.create_graph()
-        spaces_to_recalc = []
-        for x in range(9):
-            for y in range(9):
-                space = self.get(x, y)
-                to_cells = self.graph[space]
-                new_cells = new_graph[space]
-
-                xor_cells = set(to_cells) ^ set(new_cells)                
-                if len(xor_cells) > 0:
-                    spaces_to_recalc.append(space)
-                    for node in xor_cells:
-                        spaces_to_recalc.append(node)
         self.graph = new_graph
         self.space_distances_p1 = self.calculate_space_distances(self.graph, 8)
         self.space_distances_p2 = self.calculate_space_distances(self.graph, 0)
-        for space in list(set(spaces_to_recalc)):
-            log("board_changed: spaces_to_recalc", space.x, space.y)
-            #self.calculate_space_distance2(self.graph, 8, self.space_distances_p1, space.x, space.y)
-            #self.calculate_space_distance2(self.graph, 0, self.space_distances_p2, space.x, space.y)
-
-        # TODO:  make a function of this
-        # Return here to turn-off output of space_distances
-        #return
-        for row in range(9):
-            output = ""
-            for col in range(9):
-                x = col
-                y = row
-                space = self.get(x,y)
-                if self.space_distances_p1.has_key(space):
-                    output = output + " " + str(self.space_distances_p1[space])
-                else:
-                    output = output + " ?"
-            log(output)
-        log(" ")
-        for row in range(9):
-            output = ""
-            for col in range(9):
-                x = col
-                y = row
-                space = self.get(x,y)
-                if self.space_distances_p2.has_key(space):
-                    output = output + " " + str(self.space_distances_p2[space])
-                else:
-                    output = output + " ?"
-            log(output)
-        log(" ")
 
 
 
@@ -163,8 +119,7 @@ class Board:
 
 
     def get_distance(self, space, victory_row):
-        graph = self.graph  # self.create_graph()
-        #space_distances = self.calculate_space_distances(graph, victory_row)
+        graph = self.graph
         if victory_row == 8:
             space_distances = self.space_distances_p1
         else:
@@ -179,7 +134,7 @@ class Board:
     def is_connected(self, space, victory_row):
         log("is_connected")
         connected = False
-        graph = self.graph # self.create_graph()
+        graph = self.graph
         connected_spaces = self.find_connected_spaces(graph, victory_row)
         if space in connected_spaces:
             connected = True
@@ -192,40 +147,8 @@ class Board:
             space_distances = self.space_distances_p1
         else:
             space_distances = self.space_distances_p2
-        #space_distances = self.calculate_space_distances(graph, victory_row)
         connected_spaces = space_distances.keys()
         return connected_spaces
-
-    def calculate_space_distance2(self, graph, victory_row, space_distances, x, y, visited=[]):
-        space = self.get(x, y)
-        visited.append(space)
-        recalc = False
-        if y == victory_row:
-            space_distances[space] = 0
-
-        # Try to get the distance for this space from its nodes
-        else:
-            old_distance = 99
-            if space_distances.has_key(space):
-                old_distance = space_distances[space]
-                space_distances.pop(space, None)
-            if graph.has_key(space):
-                for node in graph[space]:
-                    if graph.has_key(node) and space_distances.has_key(node):
-                        distance = space_distances[node]
-                        if not space_distances.has_key(space) or space_distances[space] > distance+1:
-                            space_distances[space] = distance + 1
-            if (space_distances.has_key(space) and space_distances[space] != old_distance):
-                recalc = True
-
-        # Populate the distances for its nodes
-        if recalc and graph.has_key(space) and space_distances.has_key(space):
-            distance = space_distances[space]
-            for node in graph[space]:
-                if node not in visited:
-                    self.calculate_space_distance2(graph, victory_row, space_distances, node.x, node.y, visited)
-
-        del visited[:]
 
     def calculate_space_distance(self, graph, victory_row, space_distances, x, y):
         space = self.get(x, y)        
@@ -265,7 +188,7 @@ class Board:
         self.calculate_space_distance(graph, victory_row, space_distances, 8, 8)
 
         # Return here to turn-off output of space_distances
-        #return space_distances
+        return space_distances
         for row in range(9):
             output = ""
             for col in range(9):
